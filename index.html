@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Repaso RED y REA - TecNM Virtual</title>
+    <style>
+        :root {
+            --blanco: #ffffff;
+            --azul-institucional: #013668;
+            --guinda: #881939;
+            --dorado: #bc955a;
+            --gris-claro: #f4f6f9;
+            --verde-exito: #2e7d32;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--gris-claro);
+            color: var(--azul-institucional);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: url('LogoTecNMVirtual.png');
+            background-repeat: no-repeat;
+            background-position: center 60%;
+            background-attachment: fixed;
+            background-size: 35rem;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: var(--azul-institucional);
+            color: var(--blanco);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--dorado);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header img {
+            max-height: 70px;
+            max-width: 90%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        header p {
+            color: var(--dorado);
+            font-size: 1.1rem;
+        }
+
+        /* --- NAVEGACIÓN --- */
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: var(--guinda);
+            padding: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav button {
+            background-color: transparent;
+            color: var(--blanco);
+            border: 2px solid var(--dorado);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        nav button:hover, nav button.active {
+            background-color: var(--dorado);
+            color: var(--azul-institucional);
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 30px auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Capa protectora para asegurar legibilidad sobre la marca de agua */
+        .content-bg-shield {
+            background-color: rgba(244, 246, 249, 0.94);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(188, 149, 90, 0.3);
+        }
+
+        .section-view {
+            display: none;
+        }
+
+        .section-view.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- ESTADÍSTICAS --- */
+        .stats-panel {
+            background: var(--blanco);
+            padding: 18px;
+            border-radius: 8px;
+            border-left: 5px solid var(--dorado);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            font-weight: bold;
+        }
+
+        .stat-item span {
+            color: var(--guinda);
+            font-size: 1.3rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--azul-institucional);
+            transition: width 0.4s ease;
+        }
+
+        /* --- FILTRO DE TARJETAS --- */
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-filter {
+            background-color: var(--blanco);
+            color: var(--azul-institucional);
+            border: 1px solid var(--azul-institucional);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-filter.active {
+            background-color: var(--azul-institucional);
+            color: var(--blanco);
+        }
+
+        /* --- TARJETAS (FLASHCARDS) --- */
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .flashcard-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 650px;
+            height: 380px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            border: 3px solid var(--dorado);
+        }
+
+        .card-front {
+            background-color: var(--azul-institucional);
+            color: var(--blanco);
+            justify-content: center;
+        }
+
+        .card-front h3 {
+            color: var(--dorado);
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-front p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .card-back {
+            background-color: var(--blanco);
+            color: var(--azul-institucional);
+            transform: rotateY(180deg);
+        }
+
+        .card-back h3 {
+            color: var(--guinda);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .card-back p {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--blanco);
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-success { background-color: var(--verde-exito); } 
+        .btn-danger { background-color: var(--guinda); }
+        .btn-nav { background-color: var(--azul-institucional); }
+
+        .tag-card {
+            background: var(--dorado);
+            color: var(--azul-institucional);
+            padding: 3px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* --- INFOGRAFÍA --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: var(--blanco);
+            border: 2px solid var(--azul-institucional);
+            border-top: 6px solid var(--guinda);
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .info-card h3 {
+            color: var(--azul-institucional);
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--dorado);
+            padding-bottom: 5px;
+        }
+
+        .badge-cc {
+            display: inline-block;
+            background: var(--azul-institucional);
+            color: var(--blanco);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        /* --- PRESENTACIONES --- */
+        .slider-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--blanco);
+            border: 4px solid var(--azul-institucional);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .slide {
+            display: none;
+            padding: 40px;
+            min-height: 320px;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide h3 {
+            color: var(--guinda);
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            border-left: 5px solid var(--dorado);
+            padding-left: 10px;
+        }
+
+        .slide ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .slider-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--azul-institucional);
+            padding: 15px 20px;
+            color: var(--blanco);
+        }
+
+        /* --- GESTIÓN Y ALMACENAMIENTO --- */
+        .storage-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .storage-item {
+            background: var(--blanco);
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 6px solid var(--dorado);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .storage-header {
+            color: var(--azul-institucional);
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background-color: var(--azul-institucional);
+            color: var(--blanco);
+            text-align: center;
+            padding: 20px 15px;
+            margin-top: auto;
+            border-top: 4px solid var(--guinda);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 20;
+        }
+
+        footer img {
+            max-height: 50px;
+            max-width: 90%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        footer p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- Logotipo Superior -->
+        <img src="LOGO_TECNM_BLANCO.png" alt="Tecnológico Nacional de México">
+        <h1>Plataforma de Repaso RED y REA</h1>
+        <p>Entorno de Aprendizaje de Educación Virtual</p>
+    </header>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchSection('conceptos')">20 Conceptos Clave</button>
+        <button class="nav-btn" onclick="switchSection('infografia')">Infografía de Licencias</button>
+        <button class="nav-btn" onclick="switchSection('presentaciones')">Presentaciones (Diseño)</button>
+        <button class="nav-btn" onclick="switchSection('gestion')">Gestión y Almacenamiento</button>
+    </nav>
+
+    <main>
+        <div class="content-bg-shield">
+            
+            <!-- SECCIÓN 1: CONCEPTOS REA / RED (20 TARJETAS) -->
+            <section id="conceptos" class="section-view active">
+                
+                <!-- Panel de estadísticas integrado -->
+                <div class="stats-panel">
+                    <div class="stat-item">Tarjetas Visualizadas: <span id="txt-vistas">0</span>/20</div>
+                    <div class="stat-item">Tarjetas Dominadas: <span id="txt-dominadas">0</span>/20</div>
+                    <div class="stat-item" id="txt-filtro-estado" style="color: var(--dorado);">Filtro actual: Todas</div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="study-progress-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Filtros inteligentes -->
+                <div class="filter-container">
+                    <button class="btn-filter active" id="btn-filter-all" onclick="setFilter('all')">Ver Todas (20)</button>
+                    <button class="btn-filter" id="btn-filter-pending" onclick="setFilter('pending')">Aún no domino</button>
+                    <button class="btn-filter" id="btn-filter-mastered" onclick="setFilter('mastered')">Dominadas</button>
+                </div>
+
+                <div class="cards-container">
+                    <p style="text-align: center; font-style: italic; margin-bottom: 5px;">
+                        Haz clic en el cuerpo de la tarjeta para voltearla. Utiliza los botones "¡Lo domino!" o "Aún no" para registrar tu avance.
+                    </p>
+                    
+                    <div class="flashcard-wrapper">
+                        <div class="flashcard" id="card" onclick="flipCard()">
+                            <!-- Cara Frontal -->
+                            <div class="card-face card-front">
+                                <span class="tag-card" id="card-tag">Concepto</span>
+                                <h3>Pregunta</h3>
+                                <p id="card-question">Cargando pregunta...</p>
+                                <small style="margin-top: 25px; color: var(--dorado); font-weight: bold;">[ Clic para voltear ]</small>
+                            </div>
+                            <!-- Cara Trasera -->
+                            <div class="card-face card-back">
+                                <h3>Definición y Contexto</h3>
+                                <p id="card-answer">Cargando definición...</p>
+                                <small style="color: var(--guinda); margin-bottom: 10px; font-weight: bold;">¿Comprendías el concepto?</small>
+                                <div class="action-buttons" onclick="stopPropagation(event)">
+                                    <button class="btn-action btn-danger" onclick="markCard(false)">Aún no</button>
+                                    <button class="btn-action btn-success" onclick="markCard(true)">¡Lo domino!</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-action btn-nav" onclick="prevCard()">◀ Anterior</button>
+                        <span id="card-indicator" style="align-self: center; font-weight: bold;">Cargando...</span>
+                        <button class="btn-action btn-nav" onclick="nextCard()">Siguiente ▶</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 2: INFOGRAFÍA -->
+            <section id="infografia" class="section-view">
+                <h2 style="color: var(--guinda); margin-bottom: 15px; border-left: 5px solid var(--dorado); padding-left: 10px;">Esquema de Licenciamiento y Permisos REA</h2>
+                <p>El pilar fundamental de los Recursos Educativos Abiertos radica en su marco legal de libertades. Aquí se condensan sus características estructurales básicas:</p>
+                
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>Las 5R de los REA</h3>
+                        <p>Derechos de ejecución obligatorios otorgados por el autor:</p>
+                        <ul style="margin-left: 18px; margin-top: 10px; line-height: 1.6;">
+                            <li><strong>Retener:</strong> Custodiar copias físicas o virtuales.</li>
+                            <li><strong>Reutilizar:</strong> Emplear públicamente en aulas o sitios web.</li>
+                            <li><strong>Revisar:</strong> Modificar, adaptar o contextualizar.</li>
+                            <li><strong>Remezclar:</strong> Unir con otros recursos didácticos.</li>
+                            <li><strong>Redistribuir:</strong> Compartir las copias originales o modificadas.</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h3>Símbolos Modulares CC</h3>
+                        <p>Condiciones aplicables bajo el marco de Creative Commons:</p>
+                        <div style="margin-top: 10px;">
+                            <span class="badge-cc">BY (Atribución)</span>
+                            <span class="badge-cc">NC (No Comercial)</span>
+                            <span class="badge-cc">ND (Sin Derivadas)</span>
+                            <span class="badge-cc">SA (Compartir Igual)</span>
+                        </div>
+                        <p style="font-size: 0.9rem; margin-top: 12px; font-style: italic;">Nota: Un recurso con restricción ND (No Derivadas) limita las libertades de "Revisar" y "Remezclar".</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>Línea Divisoria Crítica</h3>
+                        <p><strong>RED vs REA:</strong></p>
+                        <p style="font-size: 0.95rem; margin-top: 8px; line-height: 1.6;">Todo <strong>REA</strong> clasifica intrínsecamente como un <strong>RED</strong> ya que su origen es digital y posee fines didácticos. Sin embargo, un RED bajo derechos reservados estrictos tradicionales (Copyright) jamás será un REA.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 3: PRESENTACIONES -->
+            <section id="presentaciones" class="section-view">
+                <h2 style="color: var(--guinda); margin-bottom: 15px; border-left: 5px solid var(--dorado); padding-left: 10px;">Metodología de Diseño Instruccional</h2>
+                
+                <div class="slider-container">
+                    <!-- Slide 1 -->
+                    <div class="slide active">
+                        <h3>Fase I: Análisis y Viabilidad</h3>
+                        <p>Antes del desarrollo técnico del recurso, se ejecutan las siguientes acciones clave:</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Definición clara del perfil de los estudiantes de la plataforma.</li>
+                            <li>Alineación con las competencias específicas del programa académico.</li>
+                            <li>Comprobación de requerimientos multimedia mínimos y portabilidad.</li>
+                        </ul>
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="slide">
+                        <h3>Fase II: El Modelo ADDIE</h3>
+                        <p>Ciclo estándar e interactivo imprescindible para la ingeniería de contenidos de calidad:</p>
+                        <ul style="margin-top: 10px;">
+                            <li><strong>Análisis:</strong> Detección de necesidades de aprendizaje.</li>
+                            <li><strong>Diseño:</strong> Elaboración de guiones interactivos y flujos tipográficos.</li>
+                            <li><strong>Desarrollo:</strong> Programación front-end y montaje multimedia.</li>
+                            <li><strong>Implementación:</strong> Carga y puesta en marcha en el aula virtual.</li>
+                            <li><strong>Evaluación:</strong> Medición del impacto y mejora continua.</li>
+                        </ul>
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="slide">
+                        <h3>Fase III: Aseguramiento de Calidad</h3>
+                        <p>Criterios de evaluación basados en estándares internacionales (Modelo COdA):</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Rigor pedagógico y veracidad científica del contenido.</li>
+                            <li>Nivel de usabilidad, interactividad y navegación intuitiva.</li>
+                            <li>Formatos estandarizados y accesibilidad según pautas WCAG.</li>
+                            <li>Modularidad y capacidad de reusabilidad a futuro.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Controles del Slider -->
+                    <div class="slider-controls">
+                        <button class="btn-action btn-nav" onclick="moveSlide(-1)" style="border:1px solid var(--dorado)">◀ Anterior</button>
+                        <span id="slide-index" style="font-weight: bold; letter-spacing: 0.5px;">Diapositiva 1 de 3</span>
+                        <button class="btn-action btn-nav" onclick="moveSlide(1)" style="border:1px solid var(--dorado)">Siguiente ▶</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 4: GESTIÓN Y ALMACENAMIENTO -->
+            <section id="gestion" class="section-view">
+                <h2 style="color: var(--guinda); margin-bottom: 15px; border-left: 5px solid var(--dorado); padding-left: 10px;">Administración y Curación de Contenidos</h2>
+                
+                <div class="storage-layout">
+                    <div class="storage-item">
+                        <div class="storage-header">Indexación Mediante Metadatos</div>
+                        <p>Los metadatos son estructuras normalizadas de información (por ejemplo, los esquemas <strong>IEEE LOM</strong> o <strong>Dublin Core</strong>) que etiquetan un recurso. Contienen información del autor, área de conocimiento, idioma y tipo de licenciamiento, facilitando su localización en repositorios institucionales mundiales.</p>
+                    </div>
+                    
+                    <div class="storage-item">
+                        <div class="storage-header">Repositorios de Referencia</div>
+                        <p>Plataformas centralizadas globales destinadas al almacenamiento y distribución segura de REA:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px; line-height: 1.7;">
+                            <li><strong>OER Commons:</strong> Infraestructura digital global que recopila recursos educativos abiertos de todo el mundo.</li>
+                            <li><strong>MERLOT:</strong> Repositorio académico internacional curado por redes de expertos docentes.</li>
+                            <li><strong>Procomún:</strong> Red estatal inteligente de recursos y materiales listos para la integración educativa.</li>
+                        </ul>
+                    </div>
+
+                    <div class="storage-item">
+                        <div class="storage-header">El Proceso de Curación Académica</div>
+                        <p>Consiste en filtrar, analizar, validar y enriquecer críticamente la marea de información existente en la web. El docente curador descarta materiales erróneos y selecciona únicamente las piezas que cumplen con el rigor institucional, blindando al alumno contra la infoxicación.</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer>
+        <!-- Logotipo Inferior -->
+        <img src="tecnmVirtualBlanco.png" alt="TecNM Virtual Logo Blanco">
+        <p>Tecnológico Nacional de México - Ambrosio Cardoso Jimenez. Documento de libre distribución.</p>
+    </footer>
+
+    <script>
+        // --- BASE DE DATOS EXTENDIDA (20 TARJETAS ACADÉMICAS) ---
+        const flashcardsData = [
+            {
+                tag: "RED",
+                q: "¿Qué define esencialmente a un Recurso Educativo Digital (RED)?",
+                a: "Es cualquier material codificado digitalmente desarrollado con una intencionalidad pedagógica clara, diseñado para cumplir un objetivo de aprendizaje definido y estructurado con propiedades didácticas que potencian el autoaprendizaje."
+            },
+            {
+                tag: "REA",
+                q: "¿Cuál es la característica jurídica indispensable de un REA?",
+                a: "Son materiales didácticos de acceso libre y gratuito que poseen licencias de propiedad intelectual permisivas (como Creative Commons), las cuales facultan legalmente a terceros a usarlos, adaptarlos y distribuirlos."
+            },
+            {
+                tag: "Licenciamiento",
+                q: "¿Qué restricción impone la cláusula 'ShareAlike (SA)' o 'Compartir Igual'?",
+                a: "Determina que si un usuario modifica, mezcla o genera un nuevo recurso derivado del original, tiene la obligación regulatoria estricta de publicar y distribuir su nueva obra bajo exactamente la misma licencia Creative Commons."
+            },
+            {
+                tag: "Estándares",
+                q: "¿Por qué es clave el estándar de interoperabilidad al almacenar un recurso?",
+                a: "Garantiza que el archivo didáctico o software multimedia pueda ser importado, ejecutado y evaluado correctamente en cualquier Plataforma de Gestión de Aprendizaje (LMS como Moodle o Canvas) sin sufrir daños estructurales."
+            },
+            {
+                tag: "Las 5R",
+                q: "¿A qué se refiere la libertad de 'Revisar' en el marco de las 5R de David Wiley?",
+                a: "Es el permiso legal y técnico para adaptar, ajustar, traducir, modificar o alterar el recurso educativo original con el objetivo de contextualizarlo o adecuarlo a las necesidades particulares de un grupo escolar."
+            },
+            {
+                tag: "Las 5R",
+                q: "¿Qué autoriza la R de 'Remezclar' en los Recursos Abiertos?",
+                a: "Permite combinar el recurso educativo abierto original con otros REA para dar origen a una creación didáctica integrada enteramente nueva."
+            },
+            {
+                tag: "Licenciamiento",
+                q: "¿Qué limitación extrema tiene la licencia Creative Commons con la cláusula 'ND' (No Derivadas)?",
+                a: "Prohíbe terminantemente la distribución de versiones modificadas o adaptaciones del recurso. Solo se permite descargar y compartir el material exactamente en su formato y estructura original."
+            },
+            {
+                tag: "Licenciamiento",
+                q: "¿Cuál es la licencia Creative Commons más abierta y recomendada para la divulgación global?",
+                a: "La licencia CC BY (Atribución). Solo exige que el usuario final dé crédito explícito al autor de la obra original, permitiendo comercializar, remezclar y modificar el material libremente."
+            },
+            {
+                tag: "Licenciamiento",
+                q: "¿Qué implica la cláusula 'NC' (No Comercial) en un recurso educativo?",
+                a: "Impide que terceros utilicen el material o cualquier obra que derive de él para fines comerciales, ventas directas, cobros de suscripción o generación de lucro."
+            },
+            {
+                tag: "Metadatos",
+                q: "¿Qué papel juegan los Metadatos en la catalogación de RED?",
+                a: "Son etiquetas estructuradas que describen las características técnicas y pedagógicas del recurso (autor, idioma, competencias, formato) para que los buscadores y repositorios lo indexen de forma precisa."
+            },
+            {
+                tag: "Estándares",
+                q: "¿Qué es el estándar IEEE LOM?",
+                a: "Es el estándar internacional de Metadatos para Objetos de Aprendizaje (Learning Object Metadata), el cual define una estructura conceptual estructurada en 9 categorías para catalogar recursos digitales."
+            },
+            {
+                tag: "Estándares",
+                q: "¿Qué caracteriza al estándar simplificado 'Dublin Core'?",
+                a: "Es un estándar de metadatos compuesto por 15 elementos básicos y transversales de descripción (título, creador, materia, etc.), ampliamente utilizado por su sencillez y flexibilidad en la web."
+            },
+            {
+                tag: "Estándares",
+                q: "¿Qué significan las siglas 'SCORM' en el ámbito e-learning?",
+                a: "Sharable Content Object Reference Model. Es un conjunto de estándares técnicos que permite empaquetar un curso digital para que sea completamente portable, interactivo y trazable dentro de cualquier plataforma LMS."
+            },
+            {
+                tag: "Almacenamiento",
+                q: "¿Qué diferencia a un 'Repositorio' de una simple página web de almacenamiento?",
+                a: "Un repositorio educativo organiza la información mediante sistemas estandarizados de metadatos, tiene un proceso de curación de calidad académica y permite la interoperabilidad de búsqueda con otros repositorios."
+            },
+            {
+                tag: "Curación",
+                q: "¿En qué consiste el proceso pedagógico de 'Curación de Contenidos'?",
+                a: "Consiste en buscar, filtrar, analizar críticamente, organizar e incorporar valor a la enorme cantidad de recursos digitales de la web para poner a disposición del alumno únicamente los materiales más rigurosos y efectivos."
+            },
+            {
+                tag: "Accesibilidad",
+                q: "¿Qué establece la directriz de accesibilidad web (WCAG/W3C) en los RED?",
+                a: "Demanda que el diseño de los recursos educativos digitales rompa las barreras de uso, asegurando que personas con discapacidades visuales, auditivas o motoras puedan navegar e interactuar con la información sin exclusión."
+            },
+            {
+                tag: "Calidad",
+                q: "¿Qué evalúa la herramienta estándar 'COdA'?",
+                a: "Es un modelo de evaluación de calidad que califica 10 criterios clave de los objetos de aprendizaje (5 de carácter pedagógico y 5 de carácter tecnológico/usabilidad) para guiar a los docentes en su producción."
+            },
+            {
+                tag: "Planificación",
+                q: "¿Qué es el guion pedagógico en el diseño de un RED?",
+                a: "Es el documento maestro de planificación instruccional donde el docente detalla paso a paso la estructura, los contenidos conceptuales, las interacciones multimedia y las evaluaciones que compondrán el recurso."
+            },
+            {
+                tag: "Problemáticas",
+                q: "¿Qué es la 'Infoxicación' y cómo la mitiga el correcto almacenamiento de RED?",
+                a: "Es la parálisis por sobrecarga informativa. Un repositorio catalogado e indexado mediante metadatos confiables y curación docente ahorra tiempo y asegura que los alumnos accedan directamente a información fidedigna."
+            },
+            {
+                tag: "Licenciamiento",
+                q: "¿Qué es el 'Dominio Público' (CC0) dentro del entorno académico?",
+                a: "Es la categoría donde el autor renuncia voluntariamente a todos sus derechos patrimoniales sobre el recurso a nivel mundial, permitiendo que cualquier persona lo use, modifique y comercialice sin necesidad de dar atribución."
+            }
+        ];
+
+        // --- ESTADOS DE LA APLICACIÓN ---
+        let currentCardIndex = 0;
+        let masteredCards = new Set();
+        let viewedCards = new Set([0]);
+        let currentFilter = 'all'; // 'all', 'pending', 'mastered'
+        let filteredIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+
+        // --- SISTEMA DE NAVEGACIÓN ---
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section-view').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- LÓGICA DE FILTRADO ---
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            
+            // Actualizar estilo visual de botones de filtro
+            document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+            if (filterType === 'all') {
+                document.getElementById('btn-filter-all').classList.add('active');
+                document.getElementById('txt-filtro-estado').innerText = "Filtro actual: Todas";
+            } else if (filterType === 'pending') {
+                document.getElementById('btn-filter-pending').classList.add('active');
+                document.getElementById('txt-filtro-estado').innerText = "Filtro actual: Aún no dominadas";
+            } else if (filterType === 'mastered') {
+                document.getElementById('btn-filter-mastered').classList.add('active');
+                document.getElementById('txt-filtro-estado').innerText = "Filtro actual: Dominadas";
+            }
+
+            // Re-calcular los índices que cumplen la condición
+            applyFilter();
+        }
+
+        function applyFilter() {
+            filteredIndices = [];
+            for (let i = 0; i < flashcardsData.length; i++) {
+                if (currentFilter === 'all') {
+                    filteredIndices.push(i);
+                } else if (currentFilter === 'pending' && !masteredCards.has(i)) {
+                    filteredIndices.push(i);
+                } else if (currentFilter === 'mastered' && masteredCards.has(i)) {
+                    filteredIndices.push(i);
+                }
+            }
+
+            // Actualizar el número de tarjetas en los botones
+            document.getElementById('btn-filter-all').innerText = `Ver Todas (${flashcardsData.length})`;
+            document.getElementById('btn-filter-pending').innerText = `Aún no domino (${flashcardsData.length - masteredCards.size})`;
+            document.getElementById('btn-filter-mastered').innerText = `Dominadas (${masteredCards.size})`;
+
+            // Ajustar el índice activo de forma segura
+            if (filteredIndices.length > 0) {
+                currentCardIndex = 0; // Reiniciar al primer elemento de la lista filtrada
+                updateCardUI();
+            } else {
+                showEmptyFilterMessage();
+            }
+        }
+
+        function showEmptyFilterMessage() {
+            const cardElement = document.getElementById('card');
+            cardElement.classList.remove('flipped');
+            document.getElementById('card-tag').innerText = "Vacio";
+            document.getElementById('card-question').innerText = "No hay tarjetas en esta categoría bajo el filtro seleccionado.";
+            document.getElementById('card-answer').innerText = "Para ver más contenido, cambia el filtro superior a 'Ver Todas' o sigue autoevaluándote.";
+            document.getElementById('card-indicator').innerText = "0 de 0";
+        }
+
+        // --- LÓGICA DE TARJETAS ---
+        function updateCardUI() {
+            if (filteredIndices.length === 0) {
+                showEmptyFilterMessage();
+                return;
+            }
+
+            const cardElement = document.getElementById('card');
+            cardElement.classList.remove('flipped');
+            
+            const trueIndex = filteredIndices[currentCardIndex];
+            const activeCardData = flashcardsData[trueIndex];
+
+            setTimeout(() => {
+                document.getElementById('card-tag').innerText = activeCardData.tag;
+                document.getElementById('card-question').innerText = activeCardData.q;
+                document.getElementById('card-answer').innerText = activeCardData.a;
+                
+                viewedCards.add(trueIndex);
+                document.getElementById('card-indicator').innerText = `${currentCardIndex + 1} de ${filteredIndices.length}`;
+                updateStats();
+            }, 150);
+        }
+
+        function flipCard() {
+            if (filteredIndices.length > 0) {
+                document.getElementById('card').classList.toggle('flipped');
+            }
+        }
+
+        function stopPropagation(e) {
+            e.stopPropagation();
+        }
+
+        function markCard(isMastered) {
+            if (filteredIndices.length === 0) return;
+
+            const trueIndex = filteredIndices[currentCardIndex];
+            
+            if (isMastered) {
+                masteredCards.add(trueIndex);
+            } else {
+                masteredCards.delete(trueIndex);
+            }
+
+            updateStats();
+
+            // Si estamos usando un filtro que se ve afectado por el cambio de estado,
+            // volvemos a aplicar el filtro para remover/agregar la tarjeta visualmente.
+            if (currentFilter !== 'all') {
+                applyFilter();
+            } else {
+                nextCard();
+            }
+        }
+
+        function nextCard() {
+            if (filteredIndices.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % filteredIndices.length;
+            updateCardUI();
+        }
+
+        function prevCard() {
+            if (filteredIndices.length === 0) return;
+            currentCardIndex = (currentCardIndex - 1 + filteredIndices.length) % filteredIndices.length;
+            updateCardUI();
+        }
+
+        function updateStats() {
+            document.getElementById('txt-vistas').innerText = viewedCards.size;
+            document.getElementById('txt-dominadas').innerText = masteredCards.size;
+            
+            // Actualizar la barra de progreso de estudio basado en el dominio (un máximo de 20 tarjetas)
+            const progressPercentage = (masteredCards.size / flashcardsData.length) * 100;
+            document.getElementById('study-progress-bar').style.width = `${progressPercentage}%`;
+        }
+
+        // --- LÓGICA DE DIAPOSITIVAS (PRESENTACIONES) ---
+        let currentSlideIndex = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function moveSlide(direction) {
+            slides[currentSlideIndex].classList.remove('active');
+            currentSlideIndex += direction;
+
+            if (currentSlideIndex >= slides.length) currentSlideIndex = 0;
+            if (currentSlideIndex < 0) currentSlideIndex = slides.length - 1;
+
+            slides[currentSlideIndex].classList.add('active');
+            document.getElementById('slide-index').innerText = `Diapositiva ${currentSlideIndex + 1} de ${slides.length}`;
+        }
+
+        // Inicializar al cargar la página
+        window.onload = () => {
+            updateCardUI();
+            setFilter('all');
+        };
+    </script>
+</body>
+</html>
