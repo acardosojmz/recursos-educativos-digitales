@@ -59,7 +59,7 @@ const flashcardsData = [
         a: "Son etiquetas estructuradas que describen las características técnicas y pedagógicas del recurso " +
             "(autor, idioma, competencias, formato) para que los buscadores y repositorios lo indexen de forma precisa."
     },
-    /*
+
     {
         tag: "Estándares",
         q: "¿Qué es el estándar IEEE LOM?",
@@ -73,7 +73,7 @@ const flashcardsData = [
             "(título, creador, materia, etc.), ampliamente utilizado por su sencillez y flexibilidad en la web."
     },
 
-     */
+
     {
         tag: "Estándares",
         q: "¿Qué significan las siglas 'SCORM' en el ámbito e-learning?",
@@ -129,7 +129,7 @@ let currentCardIndex = 0;
 let masteredCards = new Set();
 let viewedCards = new Set([0]);
 let currentFilter = 'all'; // 'all', 'pending', 'mastered'
-let filteredIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+let filteredIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 // --- SISTEMA DE NAVEGACIÓN ---
 function switchSection(sectionId) {
