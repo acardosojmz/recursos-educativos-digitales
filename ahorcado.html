@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahorcado - Recursos Educativos Digitales</title>
+    <!-- Tailwind CSS para un diseño moderno y rápido -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para iconos bonitos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Confetti para la celebración de victoria -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Estilos personalizados inspirados en el sitio de referencia */
+        :root {
+            --color-primary: #0f4c81; /* Azul profundo clásico de educación */
+            --color-secondary: #17a2b8; /* Turquesa/Teal vibrante */
+            --color-accent: #ff6f61; /* Coral/Naranja para llamadas a la acción */
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .primary-gradient {
+            background: linear-gradient(135deg, #0f4c81 0%, #1d3557 100%);
+        }
+
+        .btn-accent {
+            background-color: var(--color-accent);
+            transition: all 0.2s ease;
+        }
+        .btn-accent:hover {
+            background-color: #e0564c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Estilo para las teclas del teclado virtual */
+        .key-btn {
+            transition: all 0.1s ease;
+        }
+        .key-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Animación de letras reveladas */
+        .letter-slot {
+            border-bottom: 4px solid #0f4c81;
+            transition: all 0.3s ease;
+        }
+        .letter-pop {
+            animation: pop 0.3s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- Encabezado Principal -->
+    <header class="primary-gradient text-white shadow-md py-4 px-6">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-cyan-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide">Recursos Educativos Digitales</h1>
+                    <p class="text-xs text-slate-300">El Juego del Ahorcado Temático</p>
+                </div>
+            </div>
+            
+            <!-- Marcadores rápidos -->
+            <div class="flex gap-4 text-sm font-semibold">
+                <div class="bg-black/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-orange-400"></i>
+                    <span>Racha: <span id="streak-count">0</span></span>
+                </div>
+                <div class="bg-black/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-yellow-400"></i>
+                    <span>Máximo: <span id="max-streak">0</span></span>
+                </div>
+                <button id="btn-sound-toggle" class="bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-white"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Área de Juego Principal -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Panel Izquierdo: Visualización del Ahorcado e Información -->
+        <section class="lg:col-span-5 bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center justify-between min-h-[400px]">
+            <div class="w-full flex justify-between items-center mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Progreso del juego</span>
+                <span id="lives-left" class="bg-rose-50 text-rose-700 px-3 py-1 rounded-full text-xs font-bold border border-rose-200">
+                    Intentos: 6/6
+                </span>
+            </div>
+
+            <!-- SVG del Ahorcado Dibujado Dinámicamente -->
+            <div class="w-64 h-64 bg-slate-50 rounded-xl flex items-center justify-center p-4 border border-slate-100 relative">
+                <svg id="hangman-svg" viewBox="0 0 100 100" class="w-full h-full stroke-slate-700 stroke-[4] fill-none stroke-linecap-round stroke-linejoin-round">
+                    <!-- Base (Siempre visible) -->
+                    <path d="M 10 90 L 90 90" class="stroke-[5] stroke-slate-400" />
+                    <!-- Postes (Siempre visibles) -->
+                    <path d="M 25 90 L 25 15 L 65 15 L 65 25" class="stroke-[4] stroke-slate-500" />
+                    <!-- Cuerda (Siempre visible) -->
+                    <path d="M 65 25 L 65 30" class="stroke-[2] stroke-amber-700" />
+
+                    <!-- Cabeza (Fallo 1) -->
+                    <circle id="hang-head" cx="65" cy="36" r="6" class="hidden stroke-slate-800" />
+                    
+                    <!-- Cuerpo (Fallo 2) -->
+                    <line id="hang-body" x1="65" y1="42" x2="65" y2="60" class="hidden stroke-slate-800" />
+                    
+                    <!-- Brazo Izquierdo (Fallo 3) -->
+                    <line id="hang-larm" x1="65" y1="48" x2="52" y2="44" class="hidden stroke-slate-800" />
+                    
+                    <!-- Brazo Derecho (Fallo 4) -->
+                    <line id="hang-rarm" x1="65" y1="48" x2="78" y2="44" class="hidden stroke-slate-800" />
+                    
+                    <!-- Pierna Izquierda (Fallo 5) -->
+                    <line id="hang-lleg" x1="65" y1="60" x2="52" y2="72" class="hidden stroke-slate-800" />
+                    
+                    <!-- Pierna Derecha (Fallo 6 - Game Over) -->
+                    <line id="hang-rleg" x1="65" y1="60" x2="78" y2="72" class="hidden stroke-slate-800" />
+
+                    <!-- Cara triste (Fallo 6 - detalles opcionales) -->
+                    <path id="hang-face" d="M 62 35 L 63 35 M 67 35 L 68 35 M 63 39 Q 65 37 67 39" class="hidden stroke-[1] stroke-rose-600" />
+                </svg>
+
+                <!-- Animación de "¡X!" flotando para fallos -->
+                <div id="wrong-indicator" class="absolute inset-0 flex items-center justify-center bg-rose-500/10 rounded-xl opacity-0 pointer-events-none transition-opacity duration-300">
+                    <i class="fa-solid fa-circle-xmark text-rose-500 text-6xl animate-ping"></i>
+                </div>
+            </div>
+
+            <!-- Pista Educativa Dinámica -->
+            <div class="mt-4 w-full bg-cyan-50/70 border border-cyan-100 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-1">
+                    <i class="fa-solid fa-lightbulb text-amber-500 text-sm"></i>
+                    <span class="text-xs font-bold text-cyan-800 uppercase tracking-wide">Pista Educativa</span>
+                </div>
+                <p id="word-hint" class="text-xs md:text-sm text-slate-600 leading-relaxed italic">
+                    Cargando pista explicativa...
+                </p>
+            </div>
+        </section>
+
+        <!-- Panel Derecho: Espacio para adivinar y Teclado -->
+        <section class="lg:col-span-7 flex flex-col gap-6 justify-between min-h-[400px]">
+            
+            <!-- Contenedor de la Palabra Oculta -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 flex flex-col items-center justify-center gap-6 min-h-[160px]">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Adivina la palabra</div>
+                <div id="word-container" class="flex flex-wrap justify-center gap-2 md:gap-3 text-2xl md:text-4xl font-extrabold tracking-wider text-[#0f4c81]">
+                    <!-- Aquí se inyectarán dinámicamente las letras de la palabra -->
+                </div>
+            </div>
+
+            <!-- Teclado Virtual Completo e Inclusivo (incluye la Ñ) -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4">
+                <div class="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <span>Teclado virtual</span>
+                    <span class="hidden md:inline text-slate-300">(También puedes usar tu teclado físico)</span>
+                </div>
+                
+                <div id="virtual-keyboard" class="grid grid-cols-7 sm:grid-cols-9 gap-2">
+                    <!-- Se generará automáticamente en JS -->
+                </div>
+
+                <!-- Acciones Rápidas -->
+                <div class="flex gap-4 mt-2 border-t border-slate-100 pt-4">
+                    <button id="btn-skip" class="flex-1 py-2 px-4 border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-forward"></i>
+                        Saltar término
+                    </button>
+                    <button id="btn-reset" class="flex-1 py-2 px-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        Reiniciar juego
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Fin de Partida (Ganar / Perder) -->
+    <div id="result-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center transform scale-95 transition-all duration-300 relative overflow-hidden">
+            <!-- Decoraciones de fondo -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-xl"></div>
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-teal-500/10 rounded-full blur-xl"></div>
+
+            <!-- Icono Grande de Estado -->
+            <div id="modal-icon-container" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4">
+                <i id="modal-icon" class="text-4xl text-white"></i>
+            </div>
+
+            <!-- Mensaje Principal -->
+            <h2 id="modal-title" class="text-2xl font-black mb-2 text-[#0f4c81]">¡Gran victoria!</h2>
+            <p id="modal-message" class="text-sm text-slate-500 mb-6">¡Has descifrado el concepto educativo a la perfección!</p>
+
+            <!-- Detalle de la palabra revelada y su explicación -->
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-6 text-left">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Concepto Aprendido:</div>
+                <div id="modal-word-reveal" class="text-lg font-extrabold text-[#17a2b8] mb-1">Moodle</div>
+                <div id="modal-word-desc" class="text-xs text-slate-600 leading-relaxed">
+                    Plataforma de aprendizaje virtual (LMS) de código abierto para gestionar cursos académicos de forma flexible.
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex flex-col gap-2">
+                <button id="btn-modal-next" class="btn-accent text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 w-full">
+                    <span>Siguiente Término</span>
+                    <i class="fa-solid fa-circle-arrow-right"></i>
+                </button>
+                <button id="btn-modal-close" class="text-xs text-slate-400 hover:text-slate-600 font-semibold py-2">
+                    Cerrar y Ver Tablero
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie de Página Informativo -->
+    <footer class="bg-slate-800 text-slate-400 text-xs py-4 text-center border-t border-slate-700">
+        <p class="mb-1">Desarrollado para la enseñanza interactiva de la materia de <strong>Recursos Educativos Digitales</strong>.</p>
+        <p>© 2026 • Diseñado con enfoque en accesibilidad, interactividad y gamificación.</p>
+    </footer>
+
+    <!-- Script de Lógica del Juego -->
+    <script>
+        // --- 1. CONFIGURACIÓN DE PALABRAS Y PISTAS ---
+        const EDUCATIONAL_TERMS = [
+            {
+                word: "REA",
+                hint: "Recursos Educativos Abiertos. Materiales de enseñanza, aprendizaje e investigación de dominio público o con licencia abierta."
+            },
+            {
+                word: "RED",
+                hint: "Recursos Educativos Digitales. Cualquier tipo de material codificado digitalmente diseñado expresamente para fines educativos."
+            },
+            {
+                word: "Moodle",
+                hint: "Plataforma de aprendizaje en línea (LMS) gratuita y de código abierto más utilizada a nivel mundial para aulas virtuales."
+            },
+            {
+                word: "Canva",
+                hint: "Herramienta web intuitiva de diseño gráfico que permite crear hermosos posters, presentaciones e infografías sin saber diseñar."
+            },
+            {
+                word: "Kahoot",
+                hint: "Plataforma de ludificación que permite crear cuestionarios de opción múltiple interactivos para el aula en tiempo real."
+            },
+            {
+                word: "Genially",
+                hint: "Herramienta en línea para crear presentaciones interactivas, infografías animadas, mapas y juegos educativos visualmente atractivos."
+            },
+            {
+                word: "Infografía",
+                hint: "Esquema visual y sintético que resume conceptos complejos mediante combinación de imágenes explicativas, gráficos y textos breves."
+            },
+            {
+                word: "Podcast",
+                hint: "Archivo o serie de audio digital que un estudiante puede descargar o escuchar vía streaming para aprender de forma flexible y asíncrona."
+            },
+            {
+                word: "Videoconferencia",
+                hint: "Sistema de comunicación digital interactivo que permite sostener reuniones académicas de audio y video en tiempo real desde distintas ubicaciones."
+            },
+            {
+                word: "Nube",
+                hint: "Espacio de almacenamiento y procesamiento de datos en servidores de Internet que nos permite acceder a archivos educativos desde cualquier lugar."
+            },
+            {
+                word: "Google Drive",
+                hint: "Servicio de almacenamiento en la nube de Google que permite crear, compartir y co-diseñar documentos colaborativos entre docentes y alumnos."
+            },
+            {
+                word: "OneDrive",
+                hint: "Servicio de almacenamiento y herramientas colaborativas de Microsoft integrado de forma fluida con las aplicaciones de Office 365."
+            },
+            {
+                word: "Gamificación",
+                hint: "Estrategia pedagógica que traslada las dinámicas, mecánicas y recompensas propias del juego a los procesos de aprendizaje formales."
+            },
+            {
+                word: "Multimedia",
+                hint: "Integración armonizada de múltiples formatos de expresión (texto, audio, imagen, animación y video) en un mismo recurso didáctico digital."
+            },
+            {
+                word: "Interactividad",
+                hint: "Capacidad del recurso educativo digital para propiciar una respuesta activa, diálogo y participación entre el usuario y la interfaz."
+            },
+            {
+                word: "Accesibilidad",
+                hint: "Atributo que garantiza que los recursos y entornos digitales sean usables por todas las personas, independientemente de sus capacidades físicas o cognitivas."
+            }
+        ];
+
+        // --- 2. CONFIGURACIÓN DE AUDIO SINTETIZADO (Web Audio API) ---
+        // Genera efectos de sonido limpios sin depender de archivos de audio externos propensos a fallas
+        let soundEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            // Reanudar contexto si está suspendido (política del navegador)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                // Tono alegre ascendente
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'wrong') {
+                // Tono de error grave descendente
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220.00, now); // A3
+                osc.frequency.linearRampToValueAtTime(110.00, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                // Fanfarria triunfal corta
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                notes.forEach((freq, idx) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+                    noteGain.gain.setValueAtTime(0.15, now + (idx * 0.1));
+                    noteGain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.35);
+                    noteOsc.start(now + (idx * 0.1));
+                    noteOsc.stop(now + (idx * 0.1) + 0.4);
+                });
+            } else if (type === 'lose') {
+                // Sonido de derrota melancólico
+                const notes = [311.13, 293.66, 277.18, 220.00]; // Eb4, D4, Db4, A3
+                notes.forEach((freq, idx) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.frequency.setValueAtTime(freq, now + (idx * 0.15));
+                    noteGain.gain.setValueAtTime(0.15, now + (idx * 0.15));
+                    noteGain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.15) + 0.4);
+                    noteOsc.start(now + (idx * 0.15));
+                    noteOsc.stop(now + (idx * 0.15) + 0.45);
+                });
+            }
+        }
+
+        // --- 3. ESTADOS DEL JUEGO ---
+        let currentItem = null;
+        let guessedLetters = new Set();
+        let wrongGuesses = 0;
+        const maxLives = 6;
+        let streak = 0;
+        let maxStreak = 0;
+        let unusedTerms = [...EDUCATIONAL_TERMS]; // Para evitar repetición continua de palabras
+
+        // --- 4. REFERENCIAS A ELEMENTOS DEL DOM ---
+        const wordContainer = document.getElementById('word-container');
+        const keyboardContainer = document.getElementById('virtual-keyboard');
+        const livesLeftBadge = document.getElementById('lives-left');
+        const wordHint = document.getElementById('word-hint');
+        const streakCountSpan = document.getElementById('streak-count');
+        const maxStreakSpan = document.getElementById('max-streak');
+        const soundToggleBtn = document.getElementById('btn-sound-toggle');
+        const soundIcon = document.getElementById('sound-icon');
+        const skipBtn = document.getElementById('btn-skip');
+        const resetBtn = document.getElementById('btn-reset');
+
+        // Modal elements
+        const resultModal = document.getElementById('result-modal');
+        const modalIconContainer = document.getElementById('modal-icon-container');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalWordReveal = document.getElementById('modal-word-reveal');
+        const modalWordDesc = document.getElementById('modal-word-desc');
+        const modalNextBtn = document.getElementById('btn-modal-next');
+        const modalCloseBtn = document.getElementById('btn-modal-close');
+
+        // --- 5. LÓGICA DE NORMALIZACIÓN DE ACENTOS ---
+        // Convierte palabras como "Gamificación" a base "gamificacion" para facilitar comparaciones precisas
+        function removeAccents(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        // --- 6. DIBUJO DINÁMICO DEL AHORCADO ---
+        const hangmanElements = [
+            'hang-head',  // Fallo 1
+            'hang-body',  // Fallo 2
+            'hang-larm',  // Fallo 3
+            'hang-rarm',  // Fallo 4
+            'hang-lleg',  // Fallo 5
+            'hang-rleg',  // Fallo 6
+            'hang-face'   // Cara triste (activado en Game Over)
+        ];
+
+        function updateHangmanVisuals() {
+            // Ocultar todas las partes del ahorcado primero
+            hangmanElements.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            // Mostrar partes dependiendo de los fallos
+            for (let i = 0; i < wrongGuesses; i++) {
+                if (hangmanElements[i]) {
+                    document.getElementById(hangmanElements[i]).classList.remove('hidden');
+                }
+            }
+
+            // Si está en el último fallo, mostrar la cara triste
+            if (wrongGuesses >= maxLives) {
+                const face = document.getElementById('hang-face');
+                if (face) face.classList.remove('hidden');
+            }
+
+            // Actualizar etiqueta texto de vidas restantes
+            const remaining = maxLives - wrongGuesses;
+            livesLeftBadge.innerText = `Intentos: ${remaining}/${maxLives}`;
+            
+            // Cambiar colores dinámicamente según la urgencia
+            if (remaining <= 2) {
+                livesLeftBadge.className = "bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-bold border border-rose-300 animate-pulse";
+            } else if (remaining <= 4) {
+                livesLeftBadge.className = "bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-300";
+            } else {
+                livesLeftBadge.className = "bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-300";
+            }
+        }
+
+        // --- 7. CONTROL DE INICIO DE PARTIDA ---
+        function initNewGame() {
+            // Si nos quedamos sin palabras en la baraja, rellenamos de nuevo para evitar fin de juego infinito
+            if (unusedTerms.length === 0) {
+                unusedTerms = [...EDUCATIONAL_TERMS];
+            }
+
+            // Seleccionar un concepto al azar y removerlo del pool temporal
+            const randomIndex = Math.floor(Math.random() * unusedTerms.length);
+            currentItem = unusedTerms.splice(randomIndex, 1)[0];
+
+            guessedLetters.clear();
+            wrongGuesses = 0;
+            
+            // Inicialización de pistas y visualización
+            wordHint.innerText = currentItem.hint;
+            updateHangmanVisuals();
+            renderWordSlots();
+            renderKeyboard();
+            closeModal();
+        }
+
+        // --- 8. RENDERIZAR TABLERO DE PALABRA OCULTA ---
+        function renderWordSlots() {
+            wordContainer.innerHTML = '';
+            const rawWord = currentItem.word;
+
+            for (let i = 0; i < rawWord.length; i++) {
+                const originalChar = rawWord[i];
+                const normalizedChar = removeAccents(originalChar);
+                
+                const slot = document.createElement('div');
+                slot.className = "w-8 h-10 md:w-11 md:h-12 flex items-center justify-center font-bold text-xl md:text-3xl rounded-t-lg letter-slot transition-all duration-300 select-none";
+
+                // Tratamiento de espacios (para términos compuestos como 'Google Drive' o 'OneDrive')
+                if (originalChar === ' ') {
+                    slot.innerHTML = '&nbsp;&nbsp;';
+                    slot.style.borderBottom = 'none';
+                    slot.classList.add('w-4', 'md:w-6');
+                } else {
+                    // Si ya se ha adivinado la versión normalizada o es un símbolo especial
+                    if (guessedLetters.has(normalizedChar)) {
+                        slot.innerText = originalChar;
+                        slot.classList.add('text-[#0f4c81]', 'letter-pop', 'bg-cyan-50/50');
+                    } else {
+                        slot.innerText = '';
+                        slot.classList.add('text-transparent');
+                    }
+                }
+                wordContainer.appendChild(slot);
+            }
+        }
+
+        // --- 9. RENDERIZAR TECLADO VIRTUAL ---
+        function renderKeyboard() {
+            keyboardContainer.innerHTML = '';
+            // El abecedario escolar en español
+            const alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split("");
+
+            alphabet.forEach(letter => {
+                const btn = document.createElement('button');
+                const lowerLetter = letter.toLowerCase();
+                
+                // Configurar clases estéticas bases
+                btn.className = "key-btn py-2.5 px-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm md:text-base border border-slate-200/80 shadow-sm flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-[#17a2b8]/50";
+                btn.innerText = letter;
+
+                // Estilos específicos si ya fue usada
+                if (guessedLetters.has(lowerLetter)) {
+                    btn.disabled = true;
+                    // Verificar si la letra adivinada fue correcta
+                    if (isLetterInWord(lowerLetter)) {
+                        btn.className = "key-btn py-2.5 px-1 bg-emerald-100 text-emerald-800 font-bold rounded-xl text-sm md:text-base border border-emerald-300 opacity-80 cursor-not-allowed flex items-center justify-center";
+                    } else {
+                        btn.className = "key-btn py-2.5 px-1 bg-slate-200 text-slate-400 font-bold rounded-xl text-sm md:text-base border border-slate-300 opacity-50 cursor-not-allowed flex items-center justify-center";
+                    }
+                } else {
+                    btn.addEventListener('click', () => handleGuess(lowerLetter));
+                }
+
+                keyboardContainer.appendChild(btn);
+            });
+        }
+
+        // Comprobación si la letra existe de forma normalizada
+        function isLetterInWord(normalizedLetter) {
+            return removeAccents(currentItem.word).includes(normalizedLetter);
+        }
+
+        // --- 10. EVALUACIÓN DE RESPUESTA ---
+        function handleGuess(letter) {
+            const normalizedLetter = removeAccents(letter);
+            
+            // Ignorar letras ya ingresadas o juego ya terminado
+            if (guessedLetters.has(normalizedLetter) || wrongGuesses >= maxLives || checkWin()) {
+                return;
+            }
+
+            guessedLetters.add(normalizedLetter);
+
+            if (isLetterInWord(normalizedLetter)) {
+                // ÉXITO
+                playSound('correct');
+                renderWordSlots();
+                renderKeyboard(); // Recargar estados visuales de teclas
+
+                if (checkWin()) {
+                    handleVictory();
+                }
+            } else {
+                // FALLO
+                wrongGuesses++;
+                playSound('wrong');
+                updateHangmanVisuals();
+                renderKeyboard();
+
+                // Animación flash visual de error
+                const wrongInd = document.getElementById('wrong-indicator');
+                wrongInd.classList.remove('opacity-0');
+                wrongInd.classList.add('opacity-100');
+                setTimeout(() => {
+                    wrongInd.classList.remove('opacity-100');
+                    wrongInd.classList.add('opacity-0');
+                }, 400);
+
+                if (wrongGuesses >= maxLives) {
+                    handleDefeat();
+                }
+            }
+        }
+
+        // --- 11. DETECTAR VICTORIA Y DERROTA ---
+        function checkWin() {
+            const normalizedWord = removeAccents(currentItem.word).replace(/\s/g, '');
+            for (let char of normalizedWord) {
+                if (!guessedLetters.has(char)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function handleVictory() {
+            // Lanzar celebración con confetti
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            streak++;
+            if (streak > maxStreak) {
+                maxStreak = streak;
+                maxStreakSpan.innerText = maxStreak;
+            }
+            streakCountSpan.innerText = streak;
+            playSound('win');
+
+            showResultModal(true);
+        }
+
+        function handleDefeat() {
+            streak = 0; // Se rompe la racha actual
+            streakCountSpan.innerText = streak;
+            playSound('lose');
+
+            showResultModal(false);
+        }
+
+        // --- 12. MENÚS / MODALES EMERGENTES (SIN USAR ALERT) ---
+        function showResultModal(isWin) {
+            // Configurar diseño del modal según estado
+            if (isWin) {
+                modalIconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 bg-emerald-100 border-4 border-emerald-500 animate-bounce";
+                modalIcon.className = "fa-solid fa-trophy text-4xl text-emerald-600";
+                modalTitle.innerText = "¡Excelente Descubrimiento!";
+                modalTitle.className = "text-2xl font-black mb-2 text-emerald-700";
+                modalMessage.innerText = "¡Felicidades! Has respondido correctamente y sigues aprendiendo de RED.";
+            } else {
+                modalIconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 bg-rose-100 border-4 border-rose-500";
+                modalIcon.className = "fa-solid fa-heart-crack text-4xl text-rose-600";
+                modalTitle.innerText = "¡Inténtalo de nuevo!";
+                modalTitle.className = "text-2xl font-black mb-2 text-rose-700";
+                modalMessage.innerText = "El ahorcado completó su figura. No te preocupes, el aprendizaje es un camino constante.";
+            }
+
+            modalWordReveal.innerText = currentItem.word;
+            modalWordDesc.innerText = currentItem.hint;
+
+            // Mostrar el modal quitando la clase hidden
+            resultModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            resultModal.classList.add('hidden');
+        }
+
+        // --- 13. EVENTOS ADICIONALES ---
+        
+        // Manejador del teclado físico del ordenador
+        document.addEventListener('keydown', (e) => {
+            // Ignorar eventos si el modal está abierto para evitar jugadas invisibles
+            if (!resultModal.classList.contains('hidden')) return;
+
+            const key = e.key.toLowerCase();
+            // Validar si es una letra ordinaria del abecedario en español o la ñ
+            if (/^[a-zñ]$/.test(key)) {
+                handleGuess(key);
+            }
+        });
+
+        // Alternar encendido/apagado de sonido
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundIcon.className = "fa-solid fa-volume-high text-white";
+                soundToggleBtn.title = "Silenciar Sonido";
+            } else {
+                soundIcon.className = "fa-solid fa-volume-xmark text-slate-300";
+                soundToggleBtn.title = "Activar Sonido";
+            }
+        });
+
+        // Evento botón de saltar
+        skipBtn.addEventListener('click', () => {
+            streak = 0; // Saltar rompe la racha
+            streakCountSpan.innerText = streak;
+            initNewGame();
+        });
+
+        // Evento botón de reiniciar juego
+        resetBtn.addEventListener('click', () => {
+            streak = 0;
+            streakCountSpan.innerText = streak;
+            unusedTerms = [...EDUCATIONAL_TERMS]; // Resetear lista de palabras completa
+            initNewGame();
+        });
+
+        // Botones del Modal interactivo
+        modalNextBtn.addEventListener('click', () => {
+            initNewGame();
+        });
+
+        modalCloseBtn.addEventListener('click', () => {
+            // Revelar el tablero de todos modos para que el estudiante pueda ver cómo quedó
+            renderWordSlots(); 
+            // Revelar todas las letras de la palabra para retroalimentación
+            const rawWord = currentItem.word;
+            wordContainer.innerHTML = '';
+            for (let i = 0; i < rawWord.length; i++) {
+                const slot = document.createElement('div');
+                slot.className = "w-8 h-10 md:w-11 md:h-12 flex items-center justify-center font-bold text-xl md:text-3xl rounded-t-lg letter-slot bg-slate-50 text-[#0f4c81]";
+                if (rawWord[i] === ' ') {
+                    slot.innerHTML = '&nbsp;&nbsp;';
+                    slot.style.borderBottom = 'none';
+                    slot.classList.add('w-4', 'md:w-6');
+                } else {
+                    slot.innerText = rawWord[i];
+                }
+                wordContainer.appendChild(slot);
+            }
+            closeModal();
+        });
+
+        // --- 14. INICIO AUTOMÁTICO AL CARGAR ---
+        window.addEventListener('load', () => {
+            initNewGame();
+        });
+    </script>
+</body>
+</html>
